@@ -1,0 +1,118 @@
+## R2 will relay DHCP traffic to the DHCP service on R1
+## Extended DHCP configuration
+## By Team 22
+version 12.1X47-D15.4;
+system {
+    host-name R2;
+    /* User: root Password: Rootpass */
+    root-authentication {
+        encrypted-password "$1$xH9xJoL6$MFOUYnZr4.Qj2NM24XInz/";
+    }
+    services {
+        ssh;
+    }
+}
+interfaces {
+    ge-0/0/2 {
+        unit 0 {
+            family inet {
+                address 10.10.10.12/24;
+            }
+        }
+    }
+    ge-0/0/3 {
+        unit 0 {
+            family inet {
+                address 192.168.12.1/24;
+            }
+        }
+    }
+    ge-0/0/4 {
+        unit 0 {
+            family inet {
+                address 192.168.13.1/24;
+            }       
+        }
+    }
+    ge-0/0/5 {
+        unit 0{
+            family inet{
+                address 10.56.16.85/22
+            }
+        }
+    }
+}
+forwarding-options {
+    helpers {
+        bootp { /* Incoming BOOTP/DHCP request forwarding configuration */
+            server 10.10.10.11;
+            interface {
+                ge-0/0/3;
+                ge-0/0/4;
+            }
+        }
+    }   
+}
+routing-options {
+    static {
+        route 192.168.10.0/24 next-hop 10.10.10.11;
+        route 192.168.11.0/24 next-hop 10.10.10.11;
+        route 0.0.0.0/0 next-hop 10.56.16.1;
+    }
+}
+security {
+    policies {
+        from-zone trust to-zone trust {
+            policy default-permit {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+    }
+    zones {
+        security-zone trust {
+            interfaces {
+                ge-0/0/2.0 {
+                    host-inbound-traffic {
+                        system-services {
+                            ping;
+                            ssh;
+                            /* dhcp; not needed */
+                        }
+                    }
+                }
+                ge-0/0/3.0 {
+                    host-inbound-traffic {
+                        system-services {
+                            ping;
+                            ssh;
+                            dhcp; /* Open up access to DHCP service */
+                        }
+                    }
+                }
+                ge-0/0/4.0 {
+                    host-inbound-traffic {
+                        system-services {
+                            ping;
+                            ssh;
+                            dhcp; /* Open up access to DHCP service */
+                        }
+                    }
+                }
+                ge-0/0/5.0 {
+                    host-inbound-traffic {
+                        system-services {
+                            ping;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
